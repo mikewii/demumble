@@ -7,10 +7,13 @@ both POSIX and Windows.
 
     cmake -S . -B build -D CMAKE_BUILD_TYPE=Release
     cmake --build build
-    sudo cmake --install build
 
 Optionaly you can add flag `-D ENABLE_QT=ON` to link with qt core
 
 To run tests after building:
 
-    ctest
+    ctest --test-dir build
+
+To install:
+
+    sudo cmake --install build
