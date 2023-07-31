@@ -1,44 +1,104 @@
 cmake_minimum_required(VERSION 3.2.0 FATAL_ERROR)
+include(cmake/helpers.cmake)
+
 project(demumble CXX)
+option(ENABLE_QT "Link qtcore and expose QString functions" OFF)
+
+file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
+file(GLOB_RECURSE PROJECT_HEADERS CONFIGURE_DEPENDS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp")
+set(PROJECT_FILES ${PROJECT_SOURCES} ${PROJECT_HEADERS})
+
+file(GLOB_RECURSE THIRD_PARTY_SOURCES CONFIGURE_DEPENDS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/third_party/llvm/lib/Demangle/*.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/third_party/llvm/lib/Demangle/*.cpp")
+file(GLOB_RECURSE THIRD_PARTY_HEADERS CONFIGURE_DEPENDS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/third_party/llvm/include/llvm/Demangle/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/third_party/llvm/include/llvm/Demangle/*.hpp")
+set(THIRD_PARTY_FILES ${THIRD_PARTY_SOURCES} ${THIRD_PARTY_HEADERS})
+
+add_library(llvm OBJECT ${THIRD_PARTY_FILES})
+add_library(${PROJECT_NAME} $<TARGET_OBJECTS:llvm> ${PROJECT_FILES})
+add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+
+enable_testing()
+add_subdirectory(tests)
+
+target_include_directories(llvm PRIVATE third_party/llvm/include)
+target_include_directories(${PROJECT_NAME} PRIVATE third_party/llvm/include)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
+
+target_include_directories(${PROJECT_NAME} PRIVATE include)
+target_include_directories(${PROJECT_NAME} SYSTEM INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${PROJECT_HEADERS}")
+
+target_compile_features(llvm PUBLIC cxx_std_17)
+
+if (ENABLE_QT)
+    find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
+    find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core)
+
+    target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Core)
+endif()
 
 if (UNIX)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fno-exceptions -fno-rtti")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
-  if (${CMAKE_GENERATOR} STREQUAL "Ninja")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color")
-  endif()
+    target_compile_options(llvm PUBLIC $<$<CONFIG:RELEASE>:-Wall>)
+    target_compile_options(llvm PUBLIC $<$<CONFIG:RELEASE>:-fno-exceptions>)
+    target_compile_options(llvm PUBLIC $<$<CONFIG:RELEASE>:-fno-rtti>)
+    target_compile_options(llvm PUBLIC $<$<CONFIG:RELEASE>:-fvisibility=hidden>)
+    target_compile_options(llvm PUBLIC $<$<CONFIG:RELEASE>:-fPIC>)
+    target_compile_options(llvm PUBLIC $<$<CONFIG:RELEASE>:-fPIE>)
+    target_link_options(llvm PUBLIC $<$<CONFIG:RELEASE>:-s>)
 
-  # 10.9 chosen somewhat arbitrary; it's the first target where clang defaults
-  # to libc++ and ld64 defaults to stripping __TEXT,__eh_frame.
-  if (APPLE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=10.9")
-  else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-PIC")
-    set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -no-pie")
-  endif()
+    if (${CMAKE_GENERATOR} STREQUAL "Ninja")
+        target_compile_options(${PROJECT_NAME} PUBLIC $<$<CONFIG:RELEASE>:-fdiagnostics-color>)
+    endif()
+endif()
+
+if (UNIX AND APPLE)
+    # 10.9 chosen somewhat arbitrary; it's the first target where clang defaults
+    # to libc++ and ld64 defaults to stripping __TEXT,__eh_frame.
+    target_compile_options(llvm PUBLIC $<$<CONFIG:RELEASE>:-mmacosx-version-min=10.9>)
 endif()
 
 if (WIN32)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:inline /EHs-c- /GR-")
-  add_definitions(-D_CRT_SECURE_NO_WARNINGS)  # The LLVM build sets this.
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:inline /EHs-c- /GR-")
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)  # The LLVM build sets this.
 
-  # This is apparently the simplest way to statically link the CRT in CMake:
-  string(TOUPPER "${CMAKE_BUILD_TYPE}" build)
-  set(flag_var "CMAKE_CXX_FLAGS_${build}")
-  if(${flag_var} MATCHES "/MD")
-    string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
-  endif()
+    # This is apparently the simplest way to statically link the CRT in CMake:
+    string(TOUPPER "${CMAKE_BUILD_TYPE}" build)
+
+    set(flag_var "CMAKE_CXX_FLAGS_${build}")
+
+    if(${flag_var} MATCHES "/MD")
+        string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
+    endif()
 endif()
 
-include_directories(third_party/llvm/include)
-add_executable(demumble
-               demumble.cc
-               third_party/llvm/lib/Demangle/Demangle.cpp
-               third_party/llvm/lib/Demangle/ItaniumDemangle.cpp
-               third_party/llvm/lib/Demangle/DLangDemangle.cpp
-               third_party/llvm/lib/Demangle/MicrosoftDemangle.cpp
-               third_party/llvm/lib/Demangle/MicrosoftDemangleNodes.cpp
-               third_party/llvm/lib/Demangle/RustDemangle.cpp
+
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/pkg-config.pc.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc"
+    @ONLY
 )
-set_target_properties(demumble PROPERTIES CXX_STANDARD 17
-                                          CXX_STANDARD_REQUIRED ON)
+
+include(GNUInstallDirs)
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+
+install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+create_target_directory_groups(llvm)
+create_target_directory_groups(${PROJECT_NAME})
