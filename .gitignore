@@ -1,4 +1,7 @@
 .*.sw?
+*.user*
+*build*
+
 
 # dist.py outputs:
 buildlinux/
