@@ -1,11 +1,5 @@
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <algorithm>
-
-#include "llvm/Demangle/Demangle.h"
 #include "demumble.hpp"
+#include "llvm/Demangle/Demangle.h"
 
 namespace Demumble {
 std::string demangle(const char* mangledName,
@@ -83,5 +77,4 @@ std::string demangle(const QString& mangledName,
     return demangle(mangledName.toStdString(), nMangled);
 }
 #endif
-
 }; // Demumble

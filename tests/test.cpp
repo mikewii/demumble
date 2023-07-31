@@ -30,10 +30,6 @@ void testDemangle(void)
         const auto& demangled = pair.second;
         const auto& result = Demumble::demangle(mangled);
 
-//        fprintf(stderr, "[%s] [%s]\n"
-//                , demangled.c_str()
-//                , result.c_str());
-
         assert(demangled == result);
     }
 }
