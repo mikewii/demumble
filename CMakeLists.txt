@@ -20,14 +20,11 @@ file(GLOB_RECURSE THIRD_PARTY_HEADERS CONFIGURE_DEPENDS RELATIVE "${CMAKE_CURREN
     "${CMAKE_CURRENT_SOURCE_DIR}/third_party/llvm/include/llvm/Demangle/*.hpp")
 set(THIRD_PARTY_FILES ${THIRD_PARTY_SOURCES} ${THIRD_PARTY_HEADERS})
 
-add_library(llvm OBJECT ${THIRD_PARTY_FILES})
-add_library(${PROJECT_NAME} $<TARGET_OBJECTS:llvm> ${PROJECT_FILES})
+add_library(llvm_demangle OBJECT ${THIRD_PARTY_FILES})
+add_library(${PROJECT_NAME} $<TARGET_OBJECTS:llvm_demangle> ${PROJECT_FILES})
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
-enable_testing()
-add_subdirectory(tests)
-
-target_include_directories(llvm PRIVATE third_party/llvm/include)
+target_include_directories(llvm_demangle PRIVATE third_party/llvm/include)
 target_include_directories(${PROJECT_NAME} PRIVATE third_party/llvm/include)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
@@ -40,7 +37,7 @@ target_include_directories(${PROJECT_NAME} SYSTEM INTERFACE
 
 set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${PROJECT_HEADERS}")
 
-target_compile_features(llvm PUBLIC cxx_std_17)
+target_compile_features(llvm_demangle PUBLIC cxx_std_17)
 
 if (ENABLE_QT)
     find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
@@ -50,13 +47,13 @@ if (ENABLE_QT)
 endif()
 
 if (UNIX)
-    target_compile_options(llvm PUBLIC $<$<CONFIG:RELEASE>:-Wall>)
-    target_compile_options(llvm PUBLIC $<$<CONFIG:RELEASE>:-fno-exceptions>)
-    target_compile_options(llvm PUBLIC $<$<CONFIG:RELEASE>:-fno-rtti>)
-    target_compile_options(llvm PUBLIC $<$<CONFIG:RELEASE>:-fvisibility=hidden>)
-    target_compile_options(llvm PUBLIC $<$<CONFIG:RELEASE>:-fPIC>)
-    target_compile_options(llvm PUBLIC $<$<CONFIG:RELEASE>:-fPIE>)
-    target_link_options(llvm PUBLIC $<$<CONFIG:RELEASE>:-s>)
+    target_compile_options(llvm_demangle PUBLIC $<$<CONFIG:RELEASE>:-Wall>)
+    target_compile_options(llvm_demangle PUBLIC $<$<CONFIG:RELEASE>:-fno-exceptions>)
+    target_compile_options(llvm_demangle PUBLIC $<$<CONFIG:RELEASE>:-fno-rtti>)
+    target_compile_options(llvm_demangle PUBLIC $<$<CONFIG:RELEASE>:-fvisibility=hidden>)
+    target_compile_options(llvm_demangle PUBLIC $<$<CONFIG:RELEASE>:-fPIC>)
+    target_compile_options(llvm_demangle PUBLIC $<$<CONFIG:RELEASE>:-fPIE>)
+    target_link_options(llvm_demangle PUBLIC $<$<CONFIG:RELEASE>:-s>)
 
     if (${CMAKE_GENERATOR} STREQUAL "Ninja")
         target_compile_options(${PROJECT_NAME} PUBLIC $<$<CONFIG:RELEASE>:-fdiagnostics-color>)
@@ -66,7 +63,7 @@ endif()
 if (UNIX AND APPLE)
     # 10.9 chosen somewhat arbitrary; it's the first target where clang defaults
     # to libc++ and ld64 defaults to stripping __TEXT,__eh_frame.
-    target_compile_options(llvm PUBLIC $<$<CONFIG:RELEASE>:-mmacosx-version-min=10.9>)
+    target_compile_options(llvm_demangle PUBLIC $<$<CONFIG:RELEASE>:-mmacosx-version-min=10.9>)
 endif()
 
 if (WIN32)
@@ -100,5 +97,8 @@ install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-create_target_directory_groups(llvm)
+enable_testing()
+add_subdirectory(tests)
+
+create_target_directory_groups(llvm_demangle)
 create_target_directory_groups(${PROJECT_NAME})
