@@ -22,13 +22,17 @@ void testDemangle(void)
         {"___Z10blocksNRVOv_block_invoke", "invocation function for block in blocksNRVO()"},
         {"_ZN2zx7channelD4Ev", "zx::channel::~channel()"},
         {"_ZZ3fooiENK3$_0clEi", "foo(int)::$_0::operator()(int) const"},
-        {".?AVNet@@", "class Net `RTTI Type Descriptor Name'"}
+        {".?AVNet@@", "class Net `RTTI Type Descriptor Name'"},
+        {"_ZN16InLoadingGameBoxC1ERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEERKN10Filesystem4PathE8LoadTypeb", "InLoadingGameBox::InLoadingGameBox(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, Filesystem::Path const&, LoadType, bool)"},
+        {"_ZN7QObject7connectIM9QComboBoxFviEZN15ParseParametersC4EP7QWidgetEUliE4_EENSt9enable_ifIXeqsrN9QtPrivate15FunctionPointerIT0_EE13ArgumentCountLin1EEN11QMetaObject10ConnectionEE4typeEPKNSA_IT_E6ObjectESH_PKS_SB_N2Qt14ConnectionTypeE", "std::enable_if<QtPrivate::FunctionPointer<ParseParameters::ParseParameters(QWidget*)::{lambda(int)#6}>::ArgumentCount==(-1), QMetaObject::Connection>::type QObject::connect<void (QComboBox::*)(int), ParseParameters::ParseParameters(QWidget*)::{lambda(int)#6}>(QtPrivate::FunctionPointer<void (QComboBox::*)(int)>::Object const*, void (QComboBox::*)(int), QObject const*, ParseParameters::ParseParameters(QWidget*)::{lambda(int)#6}, Qt::ConnectionType)"}
     };
 
     for (const auto& pair : testStrings) {
         const auto& mangled = pair.first;
         const auto& demangled = pair.second;
         const auto& result = Demumble::demangle(mangled);
+
+        fprintf(stderr, "%s\n", result.c_str());
 
         assert(demangled == result);
     }
