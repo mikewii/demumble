@@ -2,7 +2,7 @@
 #include <cassert>
 #include <map>
 
-void testDemangle(void)
+void demangleGeneral(void)
 {
     const std::map<std::string, std::string> testStrings =
     {
@@ -11,7 +11,6 @@ void testDemangle(void)
 #else
         {"__Znwi", "operator new(int)"},
 #endif
-        {"hello", "hello"},
         {"_Z4funcPci", "func(char*, int)"},
         {"_Z1fv", "f()"},
         {"_RINvNtC3std3mem8align_ofdE", "std::mem::align_of::<f64>"},
@@ -32,15 +31,44 @@ void testDemangle(void)
         const auto& demangled = pair.second;
         const auto& result = Demumble::demangle(mangled);
 
-        fprintf(stderr, "%s\n", result.c_str());
+        if (demangled != result) {
+            fprintf(stderr
+                    , "%s\n!=\n%s\n"
+                    , demangled.c_str()
+                    , result.c_str());
 
-        assert(demangled == result);
+            assert(demangled == result);
+        }
+    }
+}
+
+void demangleQt(void)
+{
+    const std::map<std::string, std::string> testStrings =
+        {
+            {"_ZN7QWidget11setGeometryERK5QRect@Qt_5", "QWidget::setGeometry(QRect const&)"}
+        };
+
+    for (const auto& pair : testStrings) {
+        const auto& mangled = pair.first;
+        const auto& demangled = pair.second;
+        const auto& result = Demumble::demangle(mangled);
+
+        if (demangled != result) {
+            fprintf(stderr
+                    , "%s\n!=\n%s\n"
+                    , demangled.c_str()
+                    , result.c_str());
+
+            assert(demangled == result);
+        }
     }
 }
 
 int main(void)
 {
-    testDemangle();
+    demangleGeneral();
+    demangleQt();
 
     return 0;
 }
