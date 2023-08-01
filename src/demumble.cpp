@@ -3,15 +3,41 @@
 #include <cxxabi.h>
 
 namespace Demumble {
-static std::string::size_type isQt(const std::string& mangledName)
+static constexpr const char* postfix[] =
 {
-    return mangledName.rfind("@Qt");
+    "@Qt",
+    "@GLIBC",
+    "@GCC",
+    "@CXXABI"
+};
+
+static std::string::size_type isHavePostfix(const std::string& mangledName)
+{
+    auto pos = std::string::npos;
+
+    for (const auto* name : postfix) {
+        pos = mangledName.rfind(name);
+
+        if (pos != std::string::npos)
+            return pos;
+    }
+
+    return pos;
 }
 
 #if __cplusplus >= 201703L
-static std::string_view::size_type isQt(const std::string_view& mangledName)
+static std::string_view::size_type isHavePostfix(const std::string_view& mangledName)
 {
-    return mangledName.rfind("@Qt");
+    auto pos = std::string_view::npos;
+
+    for (const auto* name : postfix) {
+        pos = mangledName.rfind(name);
+
+        if (pos != std::string_view::npos)
+            return pos;
+    }
+
+    return pos;
 }
 #endif
 
@@ -26,37 +52,40 @@ std::string demangle(const std::string& mangledName,
 {
     std::string out;
     char* demangled = nullptr;
+    const auto& sub = mangledName.substr(0, isHavePostfix(mangledName));
 
     do {
         ///// No itanium ISNT the same as __cxa_demangle
-        demangled = __cxxabiv1::__cxa_demangle(mangledName.substr(0, isQt(mangledName)).data()
+        demangled = __cxxabiv1::__cxa_demangle(sub.data()
                                                , nullptr
                                                , nullptr
                                                , nullptr);
         if (demangled)
             break;
 
-        demangled = llvm::itaniumDemangle(mangledName.substr(0, isQt(mangledName)));
+        demangled = llvm::itaniumDemangle(sub);
         if (demangled)
             break;
 
-        demangled = llvm::rustDemangle(mangledName.substr(0, isQt(mangledName)));
+        demangled = llvm::rustDemangle(sub);
         if (demangled)
             break;
 
-        demangled = llvm::microsoftDemangle(mangledName.substr(0, isQt(mangledName))
+        demangled = llvm::microsoftDemangle(sub
                                             , nMangled
                                             , nullptr);
         if (demangled)
             break;
 
-        demangled = llvm::dlangDemangle(mangledName.substr(0, isQt(mangledName)));
+        demangled = llvm::dlangDemangle(sub);
     } while (false);
 
     if (demangled) {
         out = demangled;
 
         free(demangled);
+    } else if (mangledName != sub) {
+        out = sub;
     }
 
     return out;
@@ -68,36 +97,39 @@ std::string demangle(const std::string_view& mangledName,
 {
     std::string out;
     char* demangled = nullptr;
+    const auto& sub = mangledName.substr(0, isHavePostfix(mangledName));
 
     do {
-        demangled = __cxxabiv1::__cxa_demangle(mangledName.substr(0, isQt(mangledName)).data()
+        demangled = __cxxabiv1::__cxa_demangle(sub.data()
                                                , nullptr
                                                , nullptr
                                                , nullptr);
         if (demangled)
             break;
 
-        demangled = llvm::itaniumDemangle(mangledName.substr(0, isQt(mangledName)));
+        demangled = llvm::itaniumDemangle(sub);
         if (demangled)
             break;
 
-        demangled = llvm::rustDemangle(mangledName.substr(0, isQt(mangledName)));
+        demangled = llvm::rustDemangle(sub);
         if (demangled)
             break;
 
-        demangled = llvm::microsoftDemangle(mangledName.substr(0, isQt(mangledName))
+        demangled = llvm::microsoftDemangle(sub
                                             , nMangled
                                             , nullptr);
         if (demangled)
             break;
 
-        demangled = llvm::dlangDemangle(mangledName.substr(0, isQt(mangledName)));
+        demangled = llvm::dlangDemangle(sub);
     } while (false);
 
     if (demangled) {
         out = demangled;
 
         free(demangled);
+    } else if (mangledName != sub) {
+        out = sub;
     }
 
     return out;

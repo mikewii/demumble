@@ -42,12 +42,15 @@ void demangleGeneral(void)
     }
 }
 
-void demangleQt(void)
+void demangleWithPostfix(void)
 {
     const std::map<std::string, std::string> testStrings =
-        {
-            {"_ZN7QWidget11setGeometryERK5QRect@Qt_5", "QWidget::setGeometry(QRect const&)"}
-        };
+    {
+        {"_ZN7QWidget11setGeometryERK5QRect@Qt_5", "QWidget::setGeometry(QRect const&)"},
+        {"_ZdlPv@GLIBCXX_3.4", "operator delete(void*)"},
+        {"_ZTVN10__cxxabiv121__vmi_class_type_infoE@CXXABI_1.3", "vtable for __cxxabiv1::__vmi_class_type_info"},
+        {"__cxa_atexit@GLIBC_2.2.5", "__cxa_atexit"}
+    };
 
     for (const auto& pair : testStrings) {
         const auto& mangled = pair.first;
@@ -68,7 +71,7 @@ void demangleQt(void)
 int main(void)
 {
     demangleGeneral();
-    demangleQt();
+    demangleWithPostfix();
 
     return 0;
 }
