@@ -21,7 +21,11 @@ std::string demangle(const std::string_view& mangledName,
 #endif
 
 #ifdef QT_CORE_LIB
-QString demangle(const QString& mangledName,
-                 size_t* nMangled = nullptr);
+inline QString demangle(const QString& mangledName,
+                        size_t* nMangled = nullptr)
+{
+    return QString::fromStdString(Demumble::demangle(mangledName.toStdString()
+                                                     , nMangled));
+}
 #endif
 }; // Demumble
