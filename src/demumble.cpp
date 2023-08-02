@@ -11,21 +11,6 @@ static constexpr const char* postfix[] =
     "@CXXABI"
 };
 
-static std::string::size_type isHavePostfix(const std::string& mangledName)
-{
-    auto pos = std::string::npos;
-
-    for (const auto* name : postfix) {
-        pos = mangledName.rfind(name);
-
-        if (pos != std::string::npos)
-            return pos;
-    }
-
-    return pos;
-}
-
-#if __cplusplus >= 201703L
 static std::string_view::size_type isHavePostfix(const std::string_view& mangledName)
 {
     auto pos = std::string_view::npos;
@@ -39,15 +24,21 @@ static std::string_view::size_type isHavePostfix(const std::string_view& mangled
 
     return pos;
 }
-#endif
 
 std::string demangle(const char* mangledName,
                      size_t* nMangled)
 {
-    return Demumble::demangle(std::string{mangledName}, nMangled);
+    return Demumble::demangle(std::string_view{mangledName}, nMangled);
 }
 
 std::string demangle(const std::string& mangledName,
+                     size_t* nMangled)
+{
+    return Demumble::demangle(static_cast<std::string_view>(mangledName)
+                              , nMangled);
+}
+
+std::string demangle(const std::string_view& mangledName,
                      size_t* nMangled)
 {
     std::string out;
@@ -90,58 +81,4 @@ std::string demangle(const std::string& mangledName,
 
     return out;
 }
-
-#if __cplusplus >= 201703L
-std::string demangle(const std::string_view& mangledName,
-                     size_t* nMangled)
-{
-    std::string out;
-    char* demangled = nullptr;
-    const auto& sub = mangledName.substr(0, isHavePostfix(mangledName));
-
-    do {
-        demangled = __cxxabiv1::__cxa_demangle(sub.data()
-                                               , nullptr
-                                               , nullptr
-                                               , nullptr);
-        if (demangled)
-            break;
-
-        demangled = llvm::itaniumDemangle(sub);
-        if (demangled)
-            break;
-
-        demangled = llvm::rustDemangle(sub);
-        if (demangled)
-            break;
-
-        demangled = llvm::microsoftDemangle(sub
-                                            , nMangled
-                                            , nullptr);
-        if (demangled)
-            break;
-
-        demangled = llvm::dlangDemangle(sub);
-    } while (false);
-
-    if (demangled) {
-        out = demangled;
-
-        free(demangled);
-    } else if (mangledName != sub) {
-        out = sub;
-    }
-
-    return out;
-}
-#endif
-
-#ifdef QT_CORE_LIB
-QString demangle(const QString& mangledName,
-                 size_t* nMangled)
-{
-    return QString::fromStdString(Demumble::demangle(mangledName.toStdString()
-                                                     , nMangled));
-}
-#endif
 }; // Demumble
