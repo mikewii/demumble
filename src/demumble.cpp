@@ -47,34 +47,24 @@ std::string demangle(const std::string_view& mangledName,
 
     do {
         ///// No itanium ISNT the same as __cxa_demangle
-        demangled = __cxxabiv1::__cxa_demangle(sub.data()
-                                               , nullptr
-                                               , nullptr
-                                               , nullptr);
-        if (demangled)
+        if ((demangled = __cxxabiv1::__cxa_demangle(sub.data()
+                                                    , nullptr
+                                                    , nullptr
+                                                    , nullptr))
+            || (demangled = llvm::itaniumDemangle(sub))
+            || (demangled = llvm::rustDemangle(sub))
+            || (demangled = llvm::microsoftDemangle(sub
+                                                    , nMangled
+                                                    , nullptr
+                                                    , llvm::MSDemangleFlags::MSDF_None))
+            || (demangled = llvm::dlangDemangle(sub)))
             break;
-
-        demangled = llvm::itaniumDemangle(sub);
-        if (demangled)
-            break;
-
-        demangled = llvm::rustDemangle(sub);
-        if (demangled)
-            break;
-
-        demangled = llvm::microsoftDemangle(sub
-                                            , nMangled
-                                            , nullptr);
-        if (demangled)
-            break;
-
-        demangled = llvm::dlangDemangle(sub);
     } while (false);
 
     if (demangled) {
         out = demangled;
 
-        free(demangled);
+        std::free(demangled);
     } else if (mangledName != sub) {
         out = sub;
     }
