@@ -95,5 +95,7 @@ install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-create_target_directory_groups(llvm_demangle)
-create_target_directory_groups(${PROJECT_NAME})
+if(COMMAND create_target_directory_groups)
+    create_target_directory_groups(llvm_demangle)
+    create_target_directory_groups(${PROJECT_NAME})
+endif()

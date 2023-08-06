@@ -10,3 +10,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE -DPROJECT_NAME="${PROJECT_NAM
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME demumble)
 
 install(TARGETS	${PROJECT_NAME} DESTINATION bin)
+
+if(COMMAND create_target_directory_groups)
+    create_target_directory_groups(${PROJECT_NAME})
+endif()
