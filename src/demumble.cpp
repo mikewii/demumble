@@ -3,7 +3,8 @@
 #include <cxxabi.h>
 
 namespace Demumble {
-static constexpr const char* postfix[] =
+namespace {
+constexpr std::string_view postfix[] =
 {
     "@Qt",
     "@GLIBC",
@@ -11,19 +12,55 @@ static constexpr const char* postfix[] =
     "@CXXABI"
 };
 
-static std::string_view::size_type isHavePostfix(const std::string_view& mangledName)
+constexpr const std::pair<std::string_view, std::string_view::size_type> prefix[] =
+{
+    {"._", 1},
+    {"_GLOBAL__sub_I_", std::string_view::npos},
+};
+
+std::string_view::size_type isHavePostfix(const std::string_view& mangledName)
 {
     auto pos = std::string_view::npos;
 
-    for (const auto* name : postfix) {
+    for (const auto& name : postfix) {
         pos = mangledName.rfind(name);
 
-        if (pos != std::string_view::npos)
-            return pos;
+        if (pos != std::string_view::npos) {
+            while (mangledName.substr(0, pos).ends_with('@')) {
+                pos = mangledName.find_last_of('@') - 1;
+
+                if (pos <= 0)
+                    return std::string_view::npos;
+            }
+
+            break;
+        }
     }
 
     return pos;
 }
+
+std::string_view::size_type isHavePrefix(const std::string_view& mangledName)
+{
+    for (const auto& pair : prefix) {
+        const auto& str = pair.first;
+        auto offset = pair.second;
+
+        auto pos = mangledName.find(str);
+
+        if (pos == std::string_view::npos)
+            continue;
+
+        if (offset == std::string_view::npos)
+            offset = str.size();
+
+        if (pos + offset < mangledName.size())
+            return pos + offset;
+    }
+
+    return std::string_view::npos;
+}
+}; // anonymous
 
 std::string demangle(const char* mangledName,
                      size_t* nMangled)
@@ -43,7 +80,15 @@ std::string demangle(const std::string_view& mangledName,
 {
     std::string out;
     char* demangled = nullptr;
-    const auto& sub = mangledName.substr(0, isHavePostfix(mangledName));
+    std::string_view::size_type pos = std::string_view::npos;
+    std::string_view sub;
+
+    pos = isHavePrefix(mangledName);
+
+    if (pos == std::string_view::npos)
+        sub = mangledName.substr(0, isHavePostfix(mangledName));
+    else
+        sub = mangledName.substr(pos);
 
     do {
         ///// No itanium ISNT the same as __cxa_demangle
