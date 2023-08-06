@@ -35,7 +35,7 @@ target_include_directories(${PROJECT_NAME} SYSTEM INTERFACE
 set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${PROJECT_HEADERS}")
 
 # cpp20 for std::string_view::ends_with
-target_compile_features(llvm_demangle PUBLIC cxx_std_20)
+target_compile_features(llvm_demangle PUBLIC cxx_std_17)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 
 if (ENABLE_QT)
