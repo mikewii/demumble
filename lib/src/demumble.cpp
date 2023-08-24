@@ -4,7 +4,7 @@
 
 namespace Demumble {
 namespace {
-constexpr std::string_view postfix[] =
+constexpr const std::string_view postfix[] =
 {
     "@Qt",
     "@GLIBC",
@@ -50,6 +50,9 @@ std::string_view::size_type isHavePrefix(const std::string_view& mangledName)
 
         if (pos == std::string_view::npos)
             continue;
+
+        if (mangledName.substr(0, pos).find("_Z") != std::string_view::npos)
+            return std::string_view::npos;
 
         if (offset == std::string_view::npos)
             offset = str.size();
