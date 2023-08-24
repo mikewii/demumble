@@ -1,5 +1,6 @@
 project(demumble CXX)
 option(ENABLE_QT "Link qtcore and expose QString functions" OFF)
+option(ENABLE_PREPROCESS "Preprocess symbols stripping pre/postfix" ON)
 
 file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.c"
@@ -101,4 +102,8 @@ install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}
 if(COMMAND create_target_directory_groups)
     create_target_directory_groups(llvm_demangle)
     create_target_directory_groups(${PROJECT_NAME})
+endif()
+
+if(ENABLE_PREPROCESS)
+    add_definitions(-DENABLE_PREPROCESS)
 endif()
