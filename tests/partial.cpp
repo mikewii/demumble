@@ -41,6 +41,15 @@ constexpr const items data[] = {
      , {1, 0, 0, 0, 0}},
 };
 
+constexpr const items dataWithPrefix[] = {
+    {"__odr_asan._ZN5proto15SceneGadgetInfo22kScreenInfoFieldNumberE"
+     , {1, 0, 0, 0, 0}},
+};
+
+constexpr const items dataWithPostfix[] = {
+    {}
+};
+
 constexpr const items ctorDtor[] = {
     {"_ZN2zx7channelD4Ev"
      , {0, 1, 1, 0, 0}},
@@ -48,6 +57,15 @@ constexpr const items ctorDtor[] = {
      , {0, 1, 1, 0, 0}},
     {"_ZN22ProgrammableSpeakerGuiC1EPK19ProgrammableSpeakerR16GuiActionHandlerR15GuiInfoProvider"
      , {0, 1, 1, 0, 0}},
+};
+
+constexpr const items ctorDtorWithPrefix[] = {
+    {"_GLOBAL__sub_I__ZN6google8protobuf2io15FileInputStreamC2Eii"
+     , {0, 1, 1, 0, 0}},
+};
+
+constexpr const items ctorDtorWithPostfix[] = {
+    {}
 };
 
 constexpr const items function[] = {
@@ -63,10 +81,31 @@ constexpr const items function[] = {
      , {0, 0, 1, 0, 0}},
 };
 
+constexpr const items functionWithPrefix[] = {
+    {"_ZN12hb_partial_tI8._anon_0E1mIiJEEEDTcl4sinkcl6sourceIS0_EEspcvT0__EEEOT_DpOS3_"
+     , {0, 0, 1, 0, 0}},
+};
+
+constexpr const items functionWithPostfix[] = {
+    {"_ZN7QWidget11setGeometryERK5QRect@Qt_5"
+     , {0, 0, 1, 0, 0}},
+    {"_ZdlPv@GLIBCXX_3.4"
+     , {0, 0, 1, 0, 0}},
+};
+
 constexpr const items functionQualifiers[] = {
     {"_ZZ3fooiENK3$_0clEi"
      , {0, 0, 1, 0, 1}},
     {"_ZNK11BoundingBox4saveER12PropertyTreeRKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE"
+     , {0, 0, 1, 0, 1}},
+};
+
+constexpr const items functionQualifiersWithPrefix[] = {
+    {}
+};
+
+constexpr const items functionQualifiersWithPostfix[] = {
+    {"_ZNKSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE7_M_dataEv@@GLIBCXX_3.4.21"
      , {0, 0, 1, 0, 1}},
 };
 
@@ -77,12 +116,24 @@ constexpr const items specialName[] = {
      , {0, 0, 0, 1, 0}},
 };
 
+constexpr const items specialNameWithPrefix[] = {
+    {}
+};
+
+constexpr const items specialNameWithPostfix[] = {
+    {"_ZTVN10__cxxabiv121__vmi_class_type_infoE@CXXABI_1.3"
+     , {0, 0, 0, 1, 0}},
+};
+
 template <std::size_t N>
 void partial(const items (&items)[N])
 {
     for (const auto& item : items) {
-        const auto& preparedMangled = std::get<0>(item);
-        const auto& preparedPartial = std::get<1>(item);
+        const string_type& preparedMangled = std::get<0>(item);
+        const struct partial& preparedPartial = std::get<1>(item);
+
+        if (preparedMangled.empty())
+            continue;
 
         const auto& resultPartial = Demumble::Partial(preparedMangled);
         const auto& redultDemangled = Demumble::demangle(preparedMangled);
@@ -120,6 +171,18 @@ int main(void)
     partial(function);
     partial(specialName);
     partial(functionQualifiers);
+
+    partial(dataWithPrefix);
+    partial(ctorDtorWithPrefix);
+    partial(functionWithPrefix);
+    partial(specialNameWithPrefix);
+    partial(functionQualifiersWithPrefix);
+
+    partial(dataWithPostfix);
+    partial(ctorDtorWithPostfix);
+    partial(functionWithPostfix);
+    partial(specialNameWithPostfix);
+    partial(functionQualifiersWithPostfix);
 
     return 0;
 }
