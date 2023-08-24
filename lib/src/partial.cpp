@@ -1,5 +1,6 @@
 #include "partial.hpp"
 #include "partialApi.hpp"
+#include "tools.hpp"
 
 #define GUARD \
 if (!isValid()) \
@@ -9,7 +10,16 @@ namespace Demumble {
 Partial::Partial(const char *MangledName)
     : m_impl(nullptr)
 {
+#if defined(ENABLE_PREPROCESS)
+    // here we might receive substring
+    // need to make new string because accessing data()
+    // of string_view returns whole string
+    auto processed = std::string(processedSymbol(MangledName));
+
+    (void)partialDemangle(processed.data());
+#else
     (void)partialDemangle(MangledName);
+#endif
 }
 
 Partial::Partial(const std::string &MangledName)
