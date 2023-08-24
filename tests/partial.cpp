@@ -8,31 +8,8 @@
 #include <tuple>
 
 namespace {
-struct partial {
-    bool isData;
-    bool isCtorOrDtor;
-    bool isFunction;
-    bool isSpecialName;
-    bool hasFunctionQualifiers;
-
-    bool operator==(const partial& other) const
-    {
-        return std::tie(isData
-                        , isCtorOrDtor
-                        , isFunction
-                        , isSpecialName
-                        , hasFunctionQualifiers)
-               ==
-               std::tie(other.isData
-                        , other.isCtorOrDtor
-                        , other.isFunction
-                        , other.isSpecialName
-                        , other.hasFunctionQualifiers);
-    }
-};
-
 using string_type = std::string_view;
-using items = std::tuple<string_type, partial>;
+using items = std::tuple<string_type, Demumble::Partial::Result>;
 
 constexpr const items data[] = {
     {"_ZZN10RenderUtil30drawLineRotatedEntityInfoIconsER9DrawQueueRK11MapPosition15RealOrientationffPKPK13ItemPrototypemNS_9IconLayerEbE2dx"
@@ -130,18 +107,18 @@ void partial(const items (&items)[N])
 {
     for (const auto& item : items) {
         const string_type& preparedMangled = std::get<0>(item);
-        const struct partial& preparedPartial = std::get<1>(item);
+        const auto& preparedPartial = std::get<1>(item);
 
         if (preparedMangled.empty())
             continue;
 
         const auto& resultPartial = Demumble::Partial(preparedMangled);
         const auto& redultDemangled = Demumble::demangle(preparedMangled);
-        struct partial resultPartialStruct{resultPartial.isData()
-                                           , resultPartial.isCtorOrDtor()
-                                           , resultPartial.isFunction()
-                                           , resultPartial.isSpecialName()
-                                           , resultPartial.hasFunctionQualifiers()};
+        Demumble::Partial::Result resultPartialStruct{resultPartial.isData()
+                                                      , resultPartial.isCtorOrDtor()
+                                                      , resultPartial.isFunction()
+                                                      , resultPartial.isSpecialName()
+                                                      , resultPartial.hasFunctionQualifiers()};
 
         fprintf(stderr,
                 "SYM: %s\n" \

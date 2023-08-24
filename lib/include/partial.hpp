@@ -6,6 +6,23 @@ class PartialApi;
 class Partial
 {
 public:
+    struct Result {
+        bool isData;
+        bool isCtorOrDtor;
+        bool isFunction;
+        bool isSpecialName;
+        bool hasFunctionQualifiers;
+
+        bool operator==(const Result& other) const
+        {
+            return (isData == other.isData
+                    && isCtorOrDtor == other.isCtorOrDtor
+                    && isFunction == other.isFunction
+                    && isSpecialName == other.isSpecialName
+                    && hasFunctionQualifiers == other.hasFunctionQualifiers);
+        }
+    };
+public:
     explicit Partial(const char *MangledName);
     explicit Partial(const std::string &MangledName);
 
@@ -14,6 +31,8 @@ public:
     #endif
 
     ~Partial();
+
+    Result getResult(void);
 
     /// If this function has any any cv or reference qualifiers. These imply that
     /// the function is a non-static member function.

@@ -40,6 +40,21 @@ Partial::~Partial()
     }
 }
 
+Partial::Result Partial::getResult(void)
+{
+    Result res{};
+
+    if (isValid()) {
+        res.isData = isData();
+        res.isCtorOrDtor = isCtorOrDtor();
+        res.isFunction = isFunction();
+        res.isSpecialName = isSpecialName();
+        res.hasFunctionQualifiers = hasFunctionQualifiers();
+    }
+
+    return res;
+}
+
 bool Partial::partialDemangle(const char *MangledName)
 {
     bool res = false;
